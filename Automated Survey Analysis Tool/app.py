@@ -5,7 +5,7 @@ import altair as alt
 from src.prep import load_csv
 from src.sentiment import sentiment_scores, sentiment_label
 from src.keywords import top_keywords
-# from src.topics import topic_labels  # optional
+
 
 st.set_page_config(page_title="Automated Survey Analysis", page_icon="📝", layout="wide")
 
