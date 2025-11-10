@@ -1,3 +1,5 @@
+# app.py
+from pathlib import Path
 import streamlit as st
 import pandas as pd
 import altair as alt
@@ -10,9 +12,12 @@ from src.keywords import top_keywords
 st.set_page_config(page_title="Automated Survey Analysis", page_icon="📝", layout="wide")
 
 
+APP_DIR = Path(__file__).resolve().parent
+DEFAULT_CSV = APP_DIR / "data" / "sample_surveys.csv"  # works locally AND on Streamlit Cloud
+
 @st.cache_data(show_spinner=False)
 def analyze_df(file_or_path):
-    df = load_csv(file_or_path)
+    df = load_csv(file_or_path)  # accepts file-like (upload) or path
     df["sentiment_score"] = sentiment_scores(df["free_text"])
     df["sentiment"] = df["sentiment_score"].map(sentiment_label)
     # (optional) derive a numeric rating if present
@@ -38,7 +43,6 @@ def paginate(df, page_size, page):
     end = start + page_size
     return df.iloc[start:end], len(df)
 
-
 st.title("📝 Automated Survey Analysis")
 
 with st.expander("CSV format help"):
@@ -47,21 +51,39 @@ with st.expander("CSV format help"):
 with st.sidebar:
     st.header("Controls")
     up = st.file_uploader("Upload CSV", type=["csv"])
-    use_sample = st.checkbox("Use sample data", value=not up)
+    use_sample = st.checkbox("Use sample data", value=(up is None))
     k = st.slider("Top keywords", 5, 40, 15, 1)
     score_range = st.slider("Sentiment score range", -1.0, 1.0, (-1.0, 1.0), step=0.01)
     search = st.text_input("Search text", "")
     page_size = st.selectbox("Rows per page", [25, 50, 100, 200], index=1)
 
 
-if use_sample:
-    df_base = analyze_df("data/sample_surveys.csv")
-elif up is not None:
-    df_base = analyze_df(up)
-else:
-    st.info("Upload a CSV or tick 'Use sample data'.")
-    st.stop()
+source = None
+if up is not None:
+    source = up
+elif use_sample:
+    if DEFAULT_CSV.exists():
+        source = DEFAULT_CSV
+    else:
+        st.warning(
+            "Sample file not found at "
+            f"`{DEFAULT_CSV}`.\n\n"
+            "➡️ Either upload a CSV from the sidebar or add the sample file at:\n"
+            "`Automated Survey Analysis Tool/data/sample_surveys.csv`"
+        )
+        st.stop()
 
+
+try:
+    df_base = analyze_df(source)
+except FileNotFoundError as e:
+    st.error(
+        "Couldn't find the CSV file.\n\n"
+        f"Details: {e}\n\n"
+        "Tip: Ensure the sample CSV is committed to the repo at:\n"
+        "`Automated Survey Analysis Tool/data/sample_surveys.csv`"
+    )
+    st.stop()
 
 with st.sidebar:
     segs = []
@@ -71,9 +93,7 @@ with st.sidebar:
     if "rating" in df_base.columns:
         min_rating = st.slider("Min rating", 0, 5, 0, 1)
 
-
 df = apply_filters(df_base, segs, min_rating, score_range, search)
-
 
 left, right = st.columns(2)
 with left:
@@ -90,7 +110,6 @@ with left:
 with right:
     st.subheader("Descriptive stats (sentiment score)")
     st.dataframe(df["sentiment_score"].describe().to_frame())
-
 
 st.subheader("Charts")
 c1, c2 = st.columns(2)
@@ -128,7 +147,6 @@ with c2:
         )
         st.altair_chart(chart2, use_container_width=True)
 
-
 st.subheader("Top keywords (on current filters)")
 if len(df) == 0:
     st.warning("No rows after filters. Loosen your filters.")
@@ -136,11 +154,9 @@ else:
     kw = top_keywords(df["free_text"], k=k)
     st.write(kw)
 
-
 st.subheader("Rows")
 if "page" not in st.session_state:
     st.session_state.page = 0
-
 
 st.caption(f"{len(df)} rows match your filters.")
 paginated, total = paginate(df, page_size, st.session_state.page)
@@ -157,7 +173,6 @@ with reset_col:
     if st.button("Reset page"):
         st.session_state.page = 0
 
-
 st.subheader("Download")
 st.download_button(
     "⬇️ Download enriched CSV (current filters)",
@@ -171,3 +186,4 @@ st.download_button(
     neg_only.to_csv(index=False),
     file_name="survey_negatives.csv",
 )
+
