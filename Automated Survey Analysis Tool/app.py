@@ -1,8 +1,7 @@
-# app.py
-from pathlib import Path
 import streamlit as st
 import pandas as pd
 import altair as alt
+from pathlib import Path
 
 from src.prep import load_csv
 from src.sentiment import sentiment_scores, sentiment_label
@@ -13,18 +12,20 @@ st.set_page_config(page_title="Automated Survey Analysis", page_icon="📝", lay
 
 
 APP_DIR = Path(__file__).resolve().parent
-DEFAULT_CSV = APP_DIR / "data" / "sample_surveys.csv"  # works locally AND on Streamlit Cloud
+DEFAULT_CSV = APP_DIR / "data" / "sample_surveys.csv"   
+
 
 @st.cache_data(show_spinner=False)
 def analyze_df(file_or_path):
-    df = load_csv(file_or_path)  # accepts file-like (upload) or path
+    df = load_csv(file_or_path)  
     df["sentiment_score"] = sentiment_scores(df["free_text"])
     df["sentiment"] = df["sentiment_score"].map(sentiment_label)
-    # (optional) derive a numeric rating if present
+    
     if "rating" in df.columns:
         with pd.option_context("mode.use_inf_as_na", True):
             df["rating"] = pd.to_numeric(df["rating"], errors="coerce")
     return df
+
 
 def apply_filters(df, segs, min_rating, score_range, search):
     out = df.copy()
@@ -38,20 +39,25 @@ def apply_filters(df, segs, min_rating, score_range, search):
         out = out[out["free_text"].str.contains(s, case=False, na=False)]
     return out
 
+
 def paginate(df, page_size, page):
     start = page * page_size
     end = start + page_size
     return df.iloc[start:end], len(df)
+
 
 st.title("📝 Automated Survey Analysis")
 
 with st.expander("CSV format help"):
     st.markdown("The CSV must include a **free_text** column. Optional columns like **rating**, **segment** are fine.")
 
+
 with st.sidebar:
     st.header("Controls")
     up = st.file_uploader("Upload CSV", type=["csv"])
-    use_sample = st.checkbox("Use sample data", value=(up is None))
+    
+    default_use_sample = DEFAULT_CSV.exists() and (up is None)
+    use_sample = st.checkbox("Use sample data", value=default_use_sample)
     k = st.slider("Top keywords", 5, 40, 15, 1)
     score_range = st.slider("Sentiment score range", -1.0, 1.0, (-1.0, 1.0), step=0.01)
     search = st.text_input("Search text", "")
@@ -60,30 +66,23 @@ with st.sidebar:
 
 source = None
 if up is not None:
+    
     source = up
 elif use_sample:
+    
     if DEFAULT_CSV.exists():
         source = DEFAULT_CSV
     else:
-        st.warning(
-            "Sample file not found at "
-            f"`{DEFAULT_CSV}`.\n\n"
-            "➡️ Either upload a CSV from the sidebar or add the sample file at:\n"
-            "`Automated Survey Analysis Tool/data/sample_surveys.csv`"
-        )
+        st.warning("Sample file is missing in the deployed app. Please upload a CSV.")
         st.stop()
-
-
-try:
-    df_base = analyze_df(source)
-except FileNotFoundError as e:
-    st.error(
-        "Couldn't find the CSV file.\n\n"
-        f"Details: {e}\n\n"
-        "Tip: Ensure the sample CSV is committed to the repo at:\n"
-        "`Automated Survey Analysis Tool/data/sample_surveys.csv`"
-    )
+else:
+    
+    st.info("Upload a CSV or tick **Use sample data**.")
     st.stop()
+
+
+df_base = analyze_df(source)
+
 
 with st.sidebar:
     segs = []
@@ -94,6 +93,7 @@ with st.sidebar:
         min_rating = st.slider("Min rating", 0, 5, 0, 1)
 
 df = apply_filters(df_base, segs, min_rating, score_range, search)
+
 
 left, right = st.columns(2)
 with left:
@@ -110,6 +110,7 @@ with left:
 with right:
     st.subheader("Descriptive stats (sentiment score)")
     st.dataframe(df["sentiment_score"].describe().to_frame())
+
 
 st.subheader("Charts")
 c1, c2 = st.columns(2)
@@ -147,12 +148,14 @@ with c2:
         )
         st.altair_chart(chart2, use_container_width=True)
 
+
 st.subheader("Top keywords (on current filters)")
 if len(df) == 0:
     st.warning("No rows after filters. Loosen your filters.")
 else:
     kw = top_keywords(df["free_text"], k=k)
     st.write(kw)
+
 
 st.subheader("Rows")
 if "page" not in st.session_state:
@@ -173,6 +176,7 @@ with reset_col:
     if st.button("Reset page"):
         st.session_state.page = 0
 
+
 st.subheader("Download")
 st.download_button(
     "⬇️ Download enriched CSV (current filters)",
@@ -186,4 +190,5 @@ st.download_button(
     neg_only.to_csv(index=False),
     file_name="survey_negatives.csv",
 )
+
 
