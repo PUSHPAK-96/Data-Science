@@ -59,7 +59,7 @@ st.markdown(
 st.markdown(
     """
     <style>
-    /* ---------- Layout tweaks ---------- */
+    
     .main {
         background: transparent;  /* let the video show through */
         color: #f9fafb;
@@ -72,7 +72,7 @@ st.markdown(
         padding-right: 2rem;
     }
 
-    /* ---------- Keyframe animations ---------- */
+    
     @keyframes fadeInDown {
         0%   { opacity: 0; transform: translateY(-16px); }
         100% { opacity: 1; transform: translateY(0); }
@@ -91,7 +91,7 @@ st.markdown(
         100% { opacity: 1; transform: translateY(0); }
     }
 
-    /* ---------- Hero card ---------- */
+    
     .hero-card {
         border-radius: 1.4rem;
         padding: 1.4rem 1.6rem;
@@ -133,7 +133,7 @@ st.markdown(
         background: rgba(30,64,175,0.55);
     }
 
-    /* ---------- KPI cards ---------- */
+    
     .metric-card {
         padding: 0.9rem 1.1rem;
         border-radius: 1.1rem;
@@ -171,7 +171,7 @@ st.markdown(
         margin-top: 0.15rem;
     }
 
-    /* ---------- Chips / tags ---------- */
+    
     .tag {
         display: inline-flex;
         align-items: center;
@@ -185,7 +185,7 @@ st.markdown(
         animation: softFade 0.4s ease-out;
     }
 
-    /* ---------- Section titles ---------- */
+    
     .section-title {
         font-size: 1.05rem;
         font-weight: 700;
