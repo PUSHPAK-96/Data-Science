@@ -224,10 +224,10 @@ def load_data_and_params():
                     df = load_transactions(file)
                 else:
                     df = None
-                else:
-                     base_dir = os.path.dirname(os.path.abspath(__file__))
-                     sample_path = os.path.join(base_dir, "data", "sample_transactions.csv")
-                     df = load_transactions(sample_path)
+            else:
+                 base_dir = os.path.dirname(os.path.abspath(__file__))
+                 sample_path = os.path.join(base_dir, "data", "sample_transactions.csv")
+                 df = load_transactions(sample_path)
 
         st.markdown("---")
         st.markdown("#### 🎛 Mining Presets")
