@@ -1,0 +1,7 @@
+streamlit
+pandas
+mlxtend
+plotly
+networkx
+numpy
+protobuf  # sometimes Streamlit cloud asks for this
