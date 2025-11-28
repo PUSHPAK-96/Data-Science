@@ -221,7 +221,30 @@ def load_data_and_params():
                     help="File should have at least invoice and product columns.",
                 )
                 if file is not None:
-                    df = load_transactions(file)
+                    try:
+                        df = load_transactions(file)
+                    except ValueError:
+                            st.markdown(
+                                """
+                                <div style="
+                                    background: rgba(255,0,0,0.2);
+                                    padding: 30px;
+                                    border-radius: 14px;
+                                    border: 2px solid red;
+                                    text-align: center;
+                                    font-size: 22px;
+                                    font-weight: bold;
+                                    color: white;
+                                ">
+                                ❌ WRONG FORMAT CSV UPLOADED!<br>
+                                Please upload file with columns:<br>
+                                <span style="color:yellow">invoice_id, product</span>
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+                            st.stop()
+
                 else:
                     df = None
             else:
